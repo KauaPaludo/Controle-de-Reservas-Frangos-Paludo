@@ -54,6 +54,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <h1>Pedidos de retirada</h1>
   <button type="button" id="bExp">Salvar backup</button>
   <button type="button" id="bImp">Restaurar backup</button>
+  <button type="button" id="bLimpa">Limpar pedidos antigos</button>
   <input type="file" id="arq" accept=".json,application/json" hidden>
 </header>
 <main>
@@ -89,7 +90,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div id="aviso" role="status"></div>
 <script>
 const KEY='pedidos-v1', $=id=>document.getElementById(id);
-let pedidos=carregar(), tipo='F', tAviso;
+let pedidos=carregar(), tipo='F', tAviso, diaAtual;
 
 function carregar(){try{const v=JSON.parse(localStorage.getItem(KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
 function salvar(){try{localStorage.setItem(KEY,JSON.stringify(pedidos));return true}catch(e){aviso('Não foi possível salvar. Faça um backup e libere espaço no tablet.',true);return false}}
@@ -154,6 +155,21 @@ function exportar(){
   const a=h('a',{href:url,download:'pedidos-'+hoje()+'.json'});document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);aviso('Backup salvo na pasta de downloads.');
 }
+function limparAntigos(){
+  const h0=hoje(), velhos=pedidos.filter(p=>p.retirado&&p.data<h0);
+  if(!velhos.length){aviso('Não há pedidos retirados de dias anteriores.');return}
+  if(!confirm('Apagar '+velhos.length+' pedido(s) já retirado(s) de dias anteriores?\n\nSe quiser guardar o histórico, toque em Cancelar e use "Salvar backup" antes. Pedidos pendentes e os de hoje não são apagados.'))return;
+  const antes=pedidos;pedidos=pedidos.filter(p=>!(p.retirado&&p.data<h0));
+  if(!salvar()){pedidos=antes;return}
+  render();aviso(velhos.length+' pedido(s) antigo(s) apagado(s).');
+}
+// Na virada do dia, o filtro e o formulário passam para a nova data (se ainda estavam na data antiga)
+function verificarDia(){
+  const h0=hoje();if(h0===diaAtual)return;
+  if($('fDia').value===diaAtual)$('fDia').value=h0;
+  if($('data').value===diaAtual)$('data').value=h0;
+  diaAtual=h0;render();
+}
 function importar(arquivo){
   if(!arquivo)return;
   arquivo.text().then(t=>{
@@ -170,8 +186,9 @@ $('form').addEventListener('submit',registrar);
 $('bF').onclick=()=>setTipo('F');$('bC').onclick=()=>setTipo('C');
 ['fDia','fTodos','fSt','fTp'].forEach(i=>$(i).addEventListener('change',render));
 $('busca').addEventListener('input',render);
-$('bExp').onclick=exportar;$('bImp').onclick=()=>$('arq').click();$('arq').onchange=e=>importar(e.target.files[0]);
-$('fDia').value=hoje();limparForm();render();
+$('bLimpa').onclick=limparAntigos;$('bExp').onclick=exportar;$('bImp').onclick=()=>$('arq').click();$('arq').onchange=e=>importar(e.target.files[0]);
+diaAtual=hoje();$('fDia').value=diaAtual;limparForm();render();
+setInterval(verificarDia,30000);document.addEventListener('visibilitychange',verificarDia);window.addEventListener('focus',verificarDia);
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 </script>
