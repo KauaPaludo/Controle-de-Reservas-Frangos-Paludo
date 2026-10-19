@@ -4,14 +4,13 @@ import database.Conexao;
 import entities.Cliente;
 import entities.Pedido;
 import entities.TipoPedido;
-import repositories.PedidoRepository;
 import repositories.PedidoRepositoryJDBC;
 import services.PedidoService;
 import services.PedidoServiceIMPL;
+import util.Entrada;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -42,10 +41,11 @@ public class Program {
                     break;
                 case "2":
                     imprimir(service.listarPorTipo(TipoPedido.FRANGO));
-                    System.out.println("Frangos: " + service.totalPorTipo(TipoPedido.FRANGO));
+                    imprimirTotal(service, TipoPedido.FRANGO);
                     break;
                 case "3":
                     imprimir(service.listarPorTipo(TipoPedido.CARNE));
+                    imprimirTotal(service, TipoPedido.CARNE);
                     break;
                 case "4":
                     imprimir(service.listarTodos());
@@ -68,20 +68,17 @@ public class Program {
     }
 
     private static void novoPedido(Scanner sc, PedidoService service) {
-        DateTimeFormatter fmt =DateTimeFormatter.ofPattern("HH:mm");
-
         System.out.print("Nome: ");
-        String nome = sc.nextLine();
-        String telefone;
-        while (true) {
-            System.out.print("Telefone (XX) XXXXX-XXXX: ");
-            String entrada = sc.nextLine();
-            telefone = entrada.replaceAll("\\D", ""); // mantém só os dígitos
+        String nome = sc.nextLine().trim();
 
-            if (telefone.length() == 11) {
-                break;
+        String telefone = null;
+        while (telefone == null) {
+            System.out.print("Telefone (opcional, Enter para pular): ");
+            try {
+                telefone = Entrada.telefone(sc.nextLine());
+            } catch (IllegalArgumentException e) {
+                System.out.println(e.getMessage());
             }
-            System.out.println("Número de telefone inválido");
         }
 
         Cliente cliente = new Cliente(nome, telefone);
@@ -92,7 +89,6 @@ public class Program {
             String op = sc.nextLine().trim().toUpperCase();
             if (op.equals("F")) {
                 tipo = TipoPedido.FRANGO;
-
             } else if (op.equals("C")) {
                 tipo = TipoPedido.CARNE;
             } else {
@@ -100,43 +96,53 @@ public class Program {
             }
         }
 
-        LocalTime horario = null;
+        LocalDate data = null;
+        while (data == null) {
+            System.out.print("Data de retirada (dd/MM/aaaa, Enter para hoje): ");
+            String texto = sc.nextLine().trim();
+            if (texto.isEmpty()) {
+                data = LocalDate.now();
+                continue;
+            }
+            try {
+                data = Entrada.data(texto);
+            } catch (IllegalArgumentException e) {
+                System.out.println(e.getMessage());
+            }
+        }
 
+        LocalTime horario = null;
         while (horario == null) {
             System.out.print("Horário de retirada (HH:mm): ");
             try {
-                horario = LocalTime.parse(sc.nextLine().trim(), fmt);
-            } catch (DateTimeParseException e) {
-                System.out.println("Horário inválido. Use o formato HH:mm, por exemplo 18:30.");
+                horario = Entrada.hora(sc.nextLine());
+            } catch (IllegalArgumentException e) {
+                System.out.println(e.getMessage());
             }
         }
 
-        int quant = 0;
-        while (quant <= 0) {
-            System.out.print("Quantidade: ");
+        double quantidade = 0;
+        while (quantidade <= 0) {
+            System.out.print(tipo == TipoPedido.CARNE ? "Peso em kg (ex: 1,5): " : "Quantidade: ");
             try {
-                quant = Integer.parseInt(sc.nextLine().trim());
-                if (quant <= 0) {
-                    System.out.println("A quantidade deve ser maior que zero.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Digite um número válido.");
+                String texto = sc.nextLine();
+                quantidade = tipo == TipoPedido.CARNE ? Entrada.peso(texto) : Entrada.unidades(texto);
+            } catch (IllegalArgumentException e) {
+                System.out.println(e.getMessage());
             }
         }
 
-        String Aob = "Sem observações";
+        String observacao = "Sem observações";
 
         System.out.print("Deseja algum adicional ou observação? (S/N): ");
         String adicional = sc.nextLine().trim().toUpperCase();
         if (adicional.equals("S")) {
             System.out.print("Escreva: ");
-            Aob = sc.nextLine().trim();
+            observacao = sc.nextLine().trim();
         }
-        
-        Pedido pedido = service.registrar(cliente, tipo, horario,quant,Aob);
+
+        Pedido pedido = service.registrar(cliente, tipo, data, horario, quantidade, observacao);
         System.out.println("Pedido registrado: " + pedido);
-
-
     }
 
     private static void imprimir(List<Pedido> pedidos) {
@@ -150,4 +156,8 @@ public class Program {
         }
     }
 
+    private static void imprimirTotal(PedidoService service, TipoPedido tipo) {
+        double total = service.totalPorTipo(tipo, LocalDate.now());
+        System.out.println("Falta preparar hoje (" + tipo + "): " + Pedido.formatarQuantidade(tipo, total));
+    }
 }
