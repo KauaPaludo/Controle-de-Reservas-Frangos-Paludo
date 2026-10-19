@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#23262b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Pedidos de retirada</title>
+<style>
+:root{--bg:#eef0f2;--card:#fff;--tx:#1d1f23;--mut:#5c636c;--bd:#d5d9de;--hd:#23262b;--fr:#b7791f;--frbg:#fdf0d5;--ca:#9f1d2e;--cabg:#f9dde1;--ok:#1a7f4b}
+@media (prefers-color-scheme:dark){:root{--bg:#16181b;--card:#22252a;--tx:#f1f2f4;--mut:#a3aab3;--bd:#383d44;--hd:#0f1113;--fr:#f3b84b;--frbg:#3b2f14;--ca:#f08a97;--cabg:#40191f;--ok:#4cc38a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--hd);color:#fff;padding:12px 20px;padding-top:max(12px,env(safe-area-inset-top));display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:1.15rem;margin:0;flex:1}
+main{display:grid;gap:16px;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom));max-width:1400px;margin:auto}
+@media(min-width:900px){main{grid-template-columns:340px 1fr;align-items:start}}
+section{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px}
+h2{font-size:1.05rem;margin:0 0 12px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;min-height:48px;padding:8px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+textarea{min-height:72px;resize:vertical}
+button{min-height:48px;padding:8px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--card);cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #3b82f6;outline-offset:1px}
+.tipo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tipo button[aria-pressed=true]{color:#fff;font-weight:700}
+#bF[aria-pressed=true]{background:var(--fr);border-color:var(--fr)}
+#bC[aria-pressed=true]{background:var(--ca);border-color:var(--ca)}
+.dh{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prim{width:100%;margin-top:16px;background:var(--hd);color:#fff;font-weight:700;border-color:var(--hd)}
+.filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end}
+.filtros label{margin:0 0 4px}
+.chk{display:flex;align-items:center;gap:8px;min-height:48px;margin:0;color:var(--tx);font-size:1rem}
+.chk input{width:24px;min-height:24px}
+#tot{margin:14px 0;padding:12px;border-radius:8px;background:var(--bg);font-weight:700}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--bd)}
+.item.ret{opacity:.55}
+.q{min-width:92px;padding:8px;border-radius:8px;text-align:center;font-weight:700}
+.q.F{background:var(--frbg);color:var(--fr)}.q.C{background:var(--cabg);color:var(--ca)}
+.q small{display:block;font-weight:400;color:var(--mut)}
+.nome{font-weight:700}.sub{color:var(--mut);font-size:.9rem}
+.acoes{display:flex;gap:8px}
+.acoes .ok{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700}
+.vazio{padding:28px 0;text-align:center;color:var(--mut)}
+#aviso{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:90%;padding:12px 20px;border-radius:8px;background:var(--hd);color:#fff;display:none;z-index:9}
+#aviso.erro{background:#b3261e}
+@media(max-width:600px){.item{grid-template-columns:auto 1fr}.acoes{grid-column:1/-1}.acoes button{flex:1}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pedidos de retirada</h1>
+  <button type="button" id="bExp">Salvar backup</button>
+  <button type="button" id="bImp">Restaurar backup</button>
+  <input type="file" id="arq" accept=".json,application/json" hidden>
+</header>
+<main>
+<section>
+  <h2>Novo pedido</h2>
+  <form id="form" autocomplete="off" novalidate>
+    <label for="nome">Nome</label><input id="nome" maxlength="80">
+    <label for="tel">Telefone (opcional)</label><input id="tel" type="tel" inputmode="tel" placeholder="(54) 99999-9999">
+    <label>Tipo</label>
+    <div class="tipo"><button type="button" id="bF" aria-pressed="true">Frango</button><button type="button" id="bC" aria-pressed="false">Carne assada</button></div>
+    <div class="dh">
+      <div><label for="data">Data</label><input id="data" type="date"></div>
+      <div><label for="hora">Horário</label><input id="hora" type="time"></div>
+    </div>
+    <label for="qtd" id="lq">Quantidade (un)</label><input id="qtd" inputmode="numeric" value="1">
+    <label for="obs">Observação</label><textarea id="obs" maxlength="300"></textarea>
+    <button class="prim" type="submit">Registrar pedido</button>
+  </form>
+</section>
+<section>
+  <h2>Pedidos</h2>
+  <div class="filtros">
+    <div><label for="fDia">Dia</label><input id="fDia" type="date"></div>
+    <label class="chk"><input type="checkbox" id="fTodos"> Todos os dias</label>
+    <div><label for="fSt">Status</label><select id="fSt"><option value="p">Pendentes</option><option value="r">Retirados</option><option value="todos">Todos</option></select></div>
+    <div><label for="fTp">Tipo</label><select id="fTp"><option value="todos">Todos</option><option value="F">Frango</option><option value="C">Carne assada</option></select></div>
+    <div><label for="busca">Buscar nome</label><input id="busca" type="search"></div>
+  </div>
+  <div id="tot"></div>
+  <div id="lista"></div>
+</section>
+</main>
+<div id="aviso" role="status"></div>
+<script>
+const KEY='pedidos-v1', $=id=>document.getElementById(id);
+let pedidos=carregar(), tipo='F', tAviso;
+
+function carregar(){try{const v=JSON.parse(localStorage.getItem(KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
+function salvar(){try{localStorage.setItem(KEY,JSON.stringify(pedidos));return true}catch(e){aviso('Não foi possível salvar. Faça um backup e libere espaço no tablet.',true);return false}}
+function hoje(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const br=iso=>iso.split('-').reverse().join('/');
+const fmtQ=(t,q)=>t==='C'?q.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' kg':Math.round(q)+' un';
+const novoId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function telefone(t){const d=t.replace(/\D/g,'');if(d&&d.length!==10&&d.length!==11)throw new Error('Telefone inválido. Use DDD + número (10 ou 11 dígitos) ou deixe em branco.');return d}
+function peso(t){t=t.trim().replace(',','.');const n=Number(t);if(!/^\d+(\.\d+)?$/.test(t)||!(n>0)||n>999)throw new Error('Peso inválido. Digite o peso em kg, por exemplo 1,5.');return n}
+function unidades(t){t=t.trim();const n=Number(t);if(!/^\d+$/.test(t)||n<1||n>999)throw new Error('Quantidade inválida. Digite um número inteiro maior que zero.');return n}
+
+function aviso(msg,erro){const a=$('aviso');a.textContent=msg;a.className=erro?'erro':'';a.style.display='block';clearTimeout(tAviso);tAviso=setTimeout(()=>a.style.display='none',erro?6000:2500)}
+
+function h(tag,attrs,...filhos){const e=document.createElement(tag);for(const k in attrs){if(k==='class')e.className=attrs[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),attrs[k]);else e.setAttribute(k,attrs[k])}filhos.flat().forEach(f=>e.append(f));return e}
+
+function setTipo(t){tipo=t;$('bF').setAttribute('aria-pressed',t==='F');$('bC').setAttribute('aria-pressed',t==='C');
+  $('lq').textContent=t==='C'?'Peso (kg)':'Quantidade (un)';$('qtd').value=t==='C'?'':'1';$('qtd').inputMode=t==='C'?'decimal':'numeric'}
+function limparForm(){$('form').reset();$('data').value=hoje();setTipo('F')}
+
+function registrar(ev){
+  ev.preventDefault();
+  try{
+    const nome=$('nome').value.trim();if(!nome)throw new Error('Informe o nome do cliente.');
+    const tel=telefone($('tel').value);
+    const data=$('data').value;if(!data)throw new Error('Informe a data de retirada.');
+    const hora=$('hora').value;if(!hora)throw new Error('Informe o horário de retirada.');
+    const qtd=tipo==='C'?peso($('qtd').value):unidades($('qtd').value);
+    pedidos.push({id:novoId(),nome,tel,tipo,data,hora,qtd,obs:$('obs').value.trim()||'Sem observações',retirado:false});
+    if(!salvar()){pedidos.pop();return}
+    limparForm();render();aviso('Pedido registrado para '+br(data)+' às '+hora+'.');
+  }catch(e){aviso(e.message,true)}
+}
+
+function alternar(p){p.retirado=!p.retirado;if(!salvar())p.retirado=!p.retirado;render()}
+function excluir(p){if(confirm('Excluir o pedido de '+p.nome+'?')){pedidos=pedidos.filter(x=>x.id!==p.id);salvar();render()}}
+
+function render(){
+  const todos=$('fTodos').checked;$('fDia').disabled=todos;
+  const dia=todos?null:$('fDia').value, st=$('fSt').value, tp=$('fTp').value, q=$('busca').value.trim().toLowerCase();
+  const pend=pedidos.filter(p=>!p.retirado&&(!dia||p.data===dia));
+  const soma=t=>pend.filter(p=>p.tipo===t).reduce((s,p)=>s+p.qtd,0);
+  $('tot').textContent='Falta preparar ('+(dia?br(dia):'todos os dias')+'): Frango '+fmtQ('F',soma('F'))+' | Carne assada '+fmtQ('C',soma('C'));
+  const lista=pedidos
+    .filter(p=>(!dia||p.data===dia)&&(st==='todos'||(st==='p')===!p.retirado)&&(tp==='todos'||p.tipo===tp)&&(!q||p.nome.toLowerCase().includes(q)))
+    .sort((a,b)=>a.retirado-b.retirado||a.data.localeCompare(b.data)||a.hora.localeCompare(b.hora));
+  const raiz=$('lista');raiz.replaceChildren();
+  if(!lista.length){raiz.append(h('div',{class:'vazio'},'Nenhum pedido encontrado. Registre um pedido ou mude os filtros.'));return}
+  for(const p of lista){
+    const tel=p.tel?p.tel.replace(/^(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3'):'sem telefone';
+    raiz.append(h('div',{class:'item'+(p.retirado?' ret':'')},
+      h('div',{class:'q '+p.tipo},fmtQ(p.tipo,p.qtd),h('small',{},p.tipo==='C'?'Carne assada':'Frango')),
+      h('div',{},h('div',{class:'nome'},p.hora+' - '+p.nome),h('div',{class:'sub'},br(p.data)+', '+tel),h('div',{class:'sub'},p.obs)),
+      h('div',{class:'acoes'},
+        h('button',{type:'button',class:p.retirado?'':'ok',onclick:()=>alternar(p)},p.retirado?'Desfazer retirada':'Marcar retirado'),
+        h('button',{type:'button',onclick:()=>excluir(p),'aria-label':'Excluir pedido de '+p.nome},'Excluir'))));
+  }
+}
+
+function exportar(){
+  const url=URL.createObjectURL(new Blob([JSON.stringify({versao:1,pedidos},null,1)],{type:'application/json'}));
+  const a=h('a',{href:url,download:'pedidos-'+hoje()+'.json'});document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);aviso('Backup salvo na pasta de downloads.');
+}
+function importar(arquivo){
+  if(!arquivo)return;
+  arquivo.text().then(t=>{
+    const j=JSON.parse(t), lista=Array.isArray(j)?j:j.pedidos;
+    const ok=x=>x&&typeof x.id==='string'&&typeof x.nome==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.data)&&/^\d{2}:\d{2}$/.test(x.hora)&&(x.tipo==='F'||x.tipo==='C')&&Number(x.qtd)>0;
+    if(!Array.isArray(lista)||!lista.every(ok))throw new Error('formato');
+    const ids=new Set(pedidos.map(p=>p.id)), novos=lista.filter(p=>!ids.has(p.id)).map(p=>({id:p.id,nome:p.nome,tel:String(p.tel||''),tipo:p.tipo,data:p.data,hora:p.hora,qtd:Number(p.qtd),obs:String(p.obs||'Sem observações'),retirado:!!p.retirado}));
+    if(!confirm('Restaurar '+novos.length+' pedido(s) do backup? Os pedidos atuais são mantidos.'))return;
+    pedidos=pedidos.concat(novos);salvar();render();aviso(novos.length+' pedido(s) restaurado(s).');
+  }).catch(()=>aviso('Arquivo de backup inválido.',true)).finally(()=>$('arq').value='');
+}
+
+$('form').addEventListener('submit',registrar);
+$('bF').onclick=()=>setTipo('F');$('bC').onclick=()=>setTipo('C');
+['fDia','fTodos','fSt','fTp'].forEach(i=>$(i).addEventListener('change',render));
+$('busca').addEventListener('input',render);
+$('bExp').onclick=exportar;$('bImp').onclick=()=>$('arq').click();$('arq').onchange=e=>importar(e.target.files[0]);
+$('fDia').value=hoje();limparForm();render();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
