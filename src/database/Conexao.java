@@ -4,10 +4,19 @@ package database;
 import java.sql.*;
 
 public class Conexao {
-    private static final String URL = "jdbc:sqlite:pedidos.db";
+    /*private static final String URL = "jdbc:sqlite:pedidos.db";
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL);
+    }
+
+     */
+    private static String url() {
+        return "jdbc:sqlite:" + System.getProperty("pedidos.db", "pedidos.db");
+    }
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url());
     }
 
     public static void criarTabelas() {
