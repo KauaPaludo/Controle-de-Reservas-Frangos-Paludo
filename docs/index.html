@@ -69,7 +69,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       <div><label for="data">Data</label><input id="data" type="date"></div>
       <div><label for="hora">Horário</label><input id="hora" type="time"></div>
     </div>
-    <label for="qtd" id="lq">Quantidade (un)</label><input id="qtd" inputmode="numeric" value="1">
+    <label for="qtd" id="lq">Quantidade (un, Ex 0,5 ou 1)</label><input id="qtd" inputmode="decimal" value="1">
     <label for="obs">Observação</label><textarea id="obs" maxlength="300"></textarea>
     <button class="prim" type="submit">Registrar pedido</button>
   </form>
@@ -96,19 +96,19 @@ function carregar(){try{const v=JSON.parse(localStorage.getItem(KEY));return Arr
 function salvar(){try{localStorage.setItem(KEY,JSON.stringify(pedidos));return true}catch(e){aviso('Não foi possível salvar. Faça um backup e libere espaço no tablet.',true);return false}}
 function hoje(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 const br=iso=>iso.split('-').reverse().join('/');
-const fmtQ=(t,q)=>t==='C'?q.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' kg':Math.round(q)+' un';
+const fmtQ=(t,q)=>t==='C'?q.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' kg':q.toLocaleString('pt-BR',{maximumFractionDigits:1})+' un';
 const novoId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 function telefone(t){const d=t.replace(/\D/g,'');if(d&&d.length!==10&&d.length!==11)throw new Error('Telefone inválido. Use DDD + número (10 ou 11 dígitos) ou deixe em branco.');return d}
 function peso(t){t=t.trim().replace(',','.');const n=Number(t);if(!/^\d+(\.\d+)?$/.test(t)||!(n>0)||n>999)throw new Error('Peso inválido. Digite o peso em kg, por exemplo 1,5.');return n}
-function unidades(t){t=t.trim();const n=Number(t);if(!/^\d+$/.test(t)||n<1||n>999)throw new Error('Quantidade inválida. Digite um número inteiro maior que zero.');return n}
+function unidades(t){t=t.trim().replace(',','.');const n=Number(t);if(!/^\d+(\.\d+)?$/.test(t)||!(n>0)||n>999||(n*2)%1!==0)throw new Error('Quantidade inválida. Use números inteiros ou meios, por exemplo 1, 1,5 ou 2.');return n}
 
 function aviso(msg,erro){const a=$('aviso');a.textContent=msg;a.className=erro?'erro':'';a.style.display='block';clearTimeout(tAviso);tAviso=setTimeout(()=>a.style.display='none',erro?6000:2500)}
 
 function h(tag,attrs,...filhos){const e=document.createElement(tag);for(const k in attrs){if(k==='class')e.className=attrs[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),attrs[k]);else e.setAttribute(k,attrs[k])}filhos.flat().forEach(f=>e.append(f));return e}
 
 function setTipo(t){tipo=t;$('bF').setAttribute('aria-pressed',t==='F');$('bC').setAttribute('aria-pressed',t==='C');
-  $('lq').textContent=t==='C'?'Peso (kg)':'Quantidade (un)';$('qtd').value=t==='C'?'':'1';$('qtd').inputMode=t==='C'?'decimal':'numeric'}
+  $('lq').textContent=t==='C'?'Peso (kg)':'Quantidade (un, ex: 1,5)';$('qtd').value=t==='C'?'':'1';$('qtd').inputMode='decimal'}
 function limparForm(){$('form').reset();$('data').value=hoje();setTipo('F')}
 
 function registrar(ev){

@@ -27,7 +27,7 @@ public class TelaPedidos extends JFrame {
     private final JComboBox<String> cbTipo = new JComboBox<>(new String[]{"Frango", "Carne assada"});
     private final JTextField txtData = new JTextField(LocalDate.now().format(Entrada.DATA), 8);
     private final JTextField txtHorario = new JTextField(5);
-    private final JLabel lblQuant = new JLabel("Quantidade (un):");
+    private final JLabel lblQuant = new JLabel("Quantidade (Ex: 0,5 ou 1 ):");
     private final JTextField txtQuant = new JTextField("1", 5);
     private final JTextArea txtObs = new JTextArea(3, 15);
 
@@ -96,7 +96,7 @@ public class TelaPedidos extends JFrame {
     /** Frango é vendido por unidade; carne assada, por peso (kg). */
     private void ajustarCampoQuantidade() {
         boolean carne = cbTipo.getSelectedIndex() == 1;
-        lblQuant.setText(carne ? "Peso (kg):" : "Quantidade (un):");
+        lblQuant.setText(carne ? "Peso (kg):" : "Quantidade (un, ex 0,5 ou 1,5):");
         txtQuant.setText(carne ? "" : "1");
         txtQuant.requestFocus();
     }
@@ -237,7 +237,7 @@ public class TelaPedidos extends JFrame {
         txtData.setText(LocalDate.now().format(Entrada.DATA));
         txtHorario.setText("");
         txtQuant.setText("1");
-        lblQuant.setText("Quantidade (un):");
+        lblQuant.setText("Quantidade (un,Ex: 0,5 ou 1 ):");
         txtObs.setText("");
         txtNome.requestFocus();
     }

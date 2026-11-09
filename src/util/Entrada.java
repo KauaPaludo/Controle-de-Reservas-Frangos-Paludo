@@ -44,16 +44,20 @@ public final class Entrada {
         }
     }
 
-    /** Quantidade inteira de unidades (frango). */
-    public static int unidades(String texto) {
+
+    /** Quantidade de frangos em múltiplos de 0,5 (1, 1,5, 2...). Aceita vírgula ou ponto. */
+    public static double unidades(String texto) {
         try {
-            int quant = Integer.parseInt(texto.trim());
+            double quant = Double.parseDouble(texto.trim().replace(',', '.'));
             if (quant <= 0 || quant > 999) {
                 throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
             }
+            if (quant * 2 != Math.rint(quant * 2)) {
+                throw new IllegalArgumentException("Use números inteiros ou meios, por exemplo 1, 1,5 ou 2.");
+            }
             return quant;
         } catch (NumberFormatException | NullPointerException e) {
-            throw new IllegalArgumentException("Quantidade inválida. Digite um número inteiro.");
+            throw new IllegalArgumentException("Quantidade inválida. Digite um número, por exemplo 1 ou 1,5.");
         }
     }
 

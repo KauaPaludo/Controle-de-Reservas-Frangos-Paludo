@@ -57,7 +57,10 @@ public class Pedido {
         if (tipo == TipoPedido.CARNE) {
             return String.format(PT_BR, "%.2f kg", valor);
         }
-        return Math.round(valor) + " un";
+        if (valor == Math.rint(valor)) {
+            return (long) valor + " un";                     // 3 un
+        }
+        return String.format(PT_BR, "%.1f un", valor);       // 1,5 un
     }
 
     @Override
