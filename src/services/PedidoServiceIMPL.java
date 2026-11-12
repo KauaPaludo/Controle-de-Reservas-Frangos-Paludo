@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PedidoServiceIMPL implements PedidoService {
     private final PedidoRepository repository;
@@ -28,13 +29,11 @@ public class PedidoServiceIMPL implements PedidoService {
 
     @Override
     public List<Pedido> listarPorTipo(TipoPedido tipo) {
-        List<Pedido> resultado = new ArrayList<>();
-        for (Pedido p : repository.listarTodos()) {
-            if (p.getTipo() == tipo) {
-                resultado.add(p);
-            }
-        }
+        List<Pedido> resultado = listarTodos().stream().
+                filter(p->p.getTipo()==tipo).
+                collect(Collectors.toList());
         return resultado;
+
     }
 
     @Override
@@ -44,24 +43,20 @@ public class PedidoServiceIMPL implements PedidoService {
 
     @Override
     public List<Pedido> buscarPorNome(String nome) {
-        List<Pedido> resultado = new ArrayList<>();
-        for (Pedido p : repository.listarTodos()) {
-            if (p.getCliente().getName().equalsIgnoreCase(nome.trim())) {
-                resultado.add(p);
-            }
+            String nomeBusca = nome.trim();
+            return repository.listarTodos().stream()
+                    .filter(p -> p.getCliente().getName().equalsIgnoreCase(nomeBusca))
+                    .collect(Collectors.toList());
         }
-        return resultado;
-    }
 
     @Override
     public double totalPorTipo(TipoPedido tipo, LocalDate data) {
-        double total = 0;
-        for (Pedido p : repository.listarTodos()) {
-            if (p.getTipo() == tipo && !p.isRetirado() && (data == null || p.getData().equals(data))) {
-                total += p.getQuantidade();
-            }
-        }
-        return total;
+        return repository.listarTodos().stream()
+                .filter(p -> p.getTipo() == tipo)
+                .filter(p -> !p.isRetirado())
+                .filter(p -> data == null || p.getData().equals(data))
+                .mapToDouble(Pedido::getQuantidade)
+                .sum();
     }
 
     @Override
